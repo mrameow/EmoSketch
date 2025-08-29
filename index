@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmoSketch - Analisis Emosi Lukisan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Comic Neue', cursive;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .upload-area {
+            border: 3px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #667eea;
+            background-color: #f7fafc;
+        }
+
+        .emotion-card {
+            transition: transform 0.3s ease;
+        }
+
+        .emotion-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .star-animation {
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+
+        .progress-bar {
+            transition: width 0.5s ease;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.8s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* New animation for clicked emojis */
+        .clicked-animation {
+            animation: bounce-once 0.5s ease-in-out;
+        }
+
+        @keyframes bounce-once {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 100;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-2">🎨 EmoSketch</h1>
+            <p class="text-xl text-purple-100">Analisis Emosi Melalui Lukisan Anda</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto">
+            <!-- Emotion Wheel Section -->
+            <div class="bg-white rounded-2xl p-8 card-shadow mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">🎯 Roda Emosi</h2>
+                <p class="text-center text-gray-600 mb-6">Hiasan visual untuk mengenali pelbagai jenis emosi</p>
+
+                <div class="flex justify-center mb-6">
+                    <div class="relative w-80 h-80">
+                        <!-- Emotion Wheel with Emojis -->
+                        <div class="absolute inset-0 rounded-full border-4 border-gray-200 bg-gradient-to-br from-purple-50 to-pink-50">
+                            <!-- Center -->
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 bg-white rounded-full border-4 border-purple-300 flex items-center justify-center">
+                                <span class="text-2xl">💭</span>
+                            </div>
+
+                            <!-- Emotion positions around the circle -->
+                            <!-- Gembira - Top -->
+                            <div class="absolute top-4 left-1/2 transform -translate-x-1/2 text-center cursor-pointer" onclick="showEmotionDetails(this, '😊', 'Gembira', 'Lukisan ini mencerminkan perasaan gembira, positif, dan ceria. Ia sering dikaitkan dengan tenaga yang tinggi dan rasa puas hati.')">
+                                <div class="text-4xl mb-1">😊</div>
+                                <p class="text-xs font-bold text-yellow-700">Gembira</p>
+                            </div>
+
+                            <!-- Teruja - Top Right -->
+                            <div class="absolute top-8 right-8 text-center cursor-pointer" onclick="showEmotionDetails(this, '🤩', 'Teruja', 'Emosi ini menunjukkan rasa keseronokan dan kegairahan. Tanda-tanda teruja dalam lukisan termasuk penggunaan warna-warna terang dan bentuk dinamik.')">
+                                <div class="text-4xl mb-1">🤩</div>
+                                <p class="text-xs font-bold text-pink-700">Teruja</p>
+                            </div>
+
+                            <!-- Tenang - Right -->
+                            <div class="absolute top-1/2 right-4 transform -translate-y-1/2 text-center cursor-pointer" onclick="showEmotionDetails(this, '😌', 'Tenang', 'Emosi tenang diwakili oleh garis-garis lembut, warna-warna yang menenangkan seperti biru dan hijau. Ia menunjukkan kedamaian dan ketenangan jiwa.')">
+                                <div class="text-4xl mb-1">😌</div>
+                                <p class="text-xs font-bold text-cyan-700">Tenang</p>
+                            </div>
+
+                            <!-- Sedih - Bottom Right -->
+                            <div class="absolute bottom-8 right-8 text-center cursor-pointer" onclick="showEmotionDetails(this, '😢', 'Sedih', 'Sedih mungkin ditunjukkan dengan warna-warna gelap atau kusam, garis yang melengkung ke bawah, dan ruang negatif yang besar. Ia mencerminkan perasaan kehilangan atau kekecewaan.')">
+                                <div class="text-4xl mb-1">😢</div>
+                                <p class="text-xs font-bold text-blue-700">Sedih</p>
+                            </div>
+
+                            <!-- Takut - Bottom -->
+                            <div class="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center cursor-pointer" onclick="showEmotionDetails(this, '😰', 'Takut', 'Emosi ini mungkin dilukis dengan bentuk yang tidak teratur, garis-garis tajam, atau penggunaan warna-warna yang menimbulkan ketegangan. Ia menunjukkan kebimbangan atau ancaman.')">
+                                <div class="text-4xl mb-1">😰</div>
+                                <p class="text-xs font-bold text-purple-700">Takut</p>
+                            </div>
+
+                            <!-- Terkejut - Bottom Left -->
+                            <div class="absolute bottom-8 left-8 text-center cursor-pointer" onclick="showEmotionDetails(this, '😲', 'Terkejut', 'Tanda-tanda terkejut termasuk penggunaan garis tebal dan elemen-elemen yang tidak dijangka. Ia boleh menjadi emosi yang positif atau negatif.')">
+                                <div class="text-4xl mb-1">😲</div>
+                                <p class="text-xs font-bold text-orange-700">Terkejut</p>
+                            </div>
+
+                            <!-- Marah - Left -->
+                            <div class="absolute top-1/2 left-4 transform -translate-y-1/2 text-center cursor-pointer" onclick="showEmotionDetails(this, '😠', 'Marah', 'Lukisan yang mencerminkan kemarahan sering menggunakan warna-warna panas seperti merah dan oren, serta garis-garis yang agresif dan tajam.')">
+                                <div class="text-4xl mb-1">😠</div>
+                                <p class="text-xs font-bold text-red-700">Marah</p>
+                            </div>
+
+                            <!-- Jijik - Top Left -->
+                            <div class="absolute top-8 left-8 text-center cursor-pointer" onclick="showEmotionDetails(this, '🤢', 'Jijik', 'Jijik mungkin ditunjukkan dengan bentuk yang tidak menyenangkan atau warna-warna yang pudar. Ia berkaitan dengan perasaan tidak selesa atau penolakan.')">
+                                <div class="text-4xl mb-1">🤢</div>
+                                <p class="text-xs font-bold text-green-700">Jijik</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <p class="text-lg text-purple-600 font-semibold italic">"Lukis, Kenal, Urus Emosi."</p>
+                    <p class="text-sm text-gray-500 mt-2">Setiap emosi adalah normal dan boleh diurus dengan baik</p>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="uploadSection" class="bg-white rounded-2xl p-8 card-shadow mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">📸 Muat Naik Lukisan Anda</h2>
+
+                <div id="uploadArea" class="upload-area rounded-xl p-12 text-center cursor-pointer">
+                    <div class="text-6xl mb-4">🖼️</div>
+                    <p class="text-lg text-gray-600 mb-4">Klik untuk memilih gambar atau seret ke sini</p>
+                    <p class="text-sm text-gray-500">Format: JPG, PNG (Maksimum 5MB)</p>
+                    <input type="file" id="fileInput" accept="image/*" class="hidden">
+                </div>
+
+                <div id="imagePreview" class="hidden mt-6 text-center">
+                    <img id="previewImg" class="max-w-xs mx-auto rounded-lg shadow-md">
+                    <button id="analyzeBtn" class="mt-4 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-8 rounded-full transition-colors">
+                        🔍 Analisis Lukisan
+                    </button>
+                </div>
+            </div>
+            <!-- Analysis Loading -->
+            <div id="loadingSection" class="hidden bg-white rounded-2xl p-8 card-shadow mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">🤖 AI sedang menganalisis lukisan anda...</h3>
+                <div class="bg-gray-200 rounded-full h-4 mb-4">
+                    <div id="progressBar" class="progress-bar bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="loadingText" class="text-center text-gray-600">Menganalisis imej dengan Gemini...</p>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="hidden">
+                <!-- Emotion Analysis -->
+                <div class="bg-white rounded-2xl p-8 card-shadow mb-8 fade-in">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">💭 Analisis Emosi</h3>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="text-center">
+                            <div id="emotionEmoji" class="text-8xl mb-4"></div>
+                            <h4 id="emotionName" class="text-xl font-bold text-gray-800 mb-2"></h4>
+                            <p id="emotionDescription" class="text-gray-600"></p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tahap Kegembiraan</label>
+                                <div class="bg-gray-200 rounded-full h-3">
+                                    <div id="happinessBar" class="bg-yellow-400 h-3 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span id="happinessPercentage" class="text-sm text-gray-600">0%</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tahap Tenang</label>
+                                <div class="bg-gray-200 rounded-full h-3">
+                                    <div id="calmBar" class="bg-blue-400 h-3 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span id="calmPercentage" class="text-sm text-gray-600">0%</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Tahap Kreativiti</label>
+                                <div class="bg-gray-200 rounded-full h-3">
+                                    <div id="creativityBar" class="bg-purple-400 h-3 rounded-full" style="width: 0%"></div>
+                                </div>
+                                <span id="creativityPercentage" class="text-sm text-gray-600">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="bg-white rounded-2xl p-8 card-shadow mb-8 fade-in">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">🔍 Penemuan AI</h3>
+
+                    <div class="grid md:grid-cols-3 gap-4">
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">🌈</div>
+                            <h4 class="font-bold text-gray-800">Warna Dominan</h4>
+                            <p id="dominantColors" class="text-sm text-gray-600"></p>
+                        </div>
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">⭕</div>
+                            <h4 class="font-bold text-gray-800">Bentuk</h4>
+                            <p id="dominantShapes" class="text-sm text-gray-600"></p>
+                        </div>
+
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="text-2xl mb-2">☀️</div>
+                            <h4 class="font-bold text-gray-800">Simbol</h4>
+                            <p id="dominantSymbols" class="text-sm text-gray-600"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emotion Management Activities -->
+                <div class="bg-white rounded-2xl p-8 card-shadow mb-8 fade-in">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">🌟 Aktiviti Pengurusan Emosi</h3>
+
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="emotion-card bg-gradient-to-br from-pink-100 to-purple-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'breathing')">
+                            <div class="text-3xl mb-3">🫁</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Latihan Pernafasan</h4>
+                            <p class="text-sm text-gray-600 mb-3">Tarik nafas dalam 3 kali untuk menenangkan diri</p>
+                            <button class="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Mula Sekarang
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-yellow-100 to-orange-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'smile')">
+                            <div class="text-3xl mb-3">😊</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Senyuman Ajaib</h4>
+                            <p class="text-sm text-gray-600 mb-3">Senyum di hadapan cermin selama 30 saat</p>
+                            <button class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Cuba Sekarang
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-green-100 to-teal-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'stretch')">
+                            <div class="text-3xl mb-3">🤸</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Senaman Regangan</h4>
+                            <p class="text-sm text-gray-600 mb-3">Regangkan badan untuk rasa lebih segar</p>
+                            <button class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Mari Bergerak
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-blue-100 to-indigo-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'draw')">
+                            <div class="text-3xl mb-3">🎨</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Lukis Lagi</h4>
+                            <p class="text-sm text-gray-600 mb-3">Lukis dengan warna cerah untuk kekal positif</p>
+                            <button class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Mula Melukis
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-red-100 to-pink-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'journal')">
+                            <div class="text-3xl mb-3">📝</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Tulis Perasaan</h4>
+                            <p class="text-sm text-gray-600 mb-3">Tulis 3 perkara yang buat anda gembira hari ini</p>
+                            <button class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Mula Menulis
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-purple-100 to-indigo-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'music')">
+                            <div class="text-3xl mb-3">🎵</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Muzik Menenangkan</h4>
+                            <p class="text-sm text-gray-600 mb-3">Dengar lagu kegemaran selama 5 minit</p>
+                            <button class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Dengar Muzik
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-teal-100 to-cyan-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'nature')">
+                            <div class="text-3xl mb-3">🌳</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Masa dengan Alam</h4>
+                            <p class="text-sm text-gray-600 mb-3">Lihat pokok atau bunga selama 2 minit</p>
+                            <button class="bg-teal-500 hover:bg-teal-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Pergi Keluar
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-orange-100 to-yellow-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'gratitude')">
+                            <div class="text-3xl mb-3">🙏</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Bersyukur</h4>
+                            <p class="text-sm text-gray-600 mb-3">Sebut 3 perkara yang anda syukuri</p>
+                            <button class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Bersyukur
+                            </button>
+                        </div>
+
+                        <div class="emotion-card bg-gradient-to-br from-emerald-100 to-green-100 p-6 rounded-xl cursor-pointer" onclick="completeActivity(this, 'hug')">
+                            <div class="text-3xl mb-3">🤗</div>
+                            <h4 class="font-bold text-gray-800 mb-2">Pelukan Hangat</h4>
+                            <p class="text-sm text-gray-600 mb-3">Peluk orang tersayang atau boneka kesayangan</p>
+                            <button class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-full text-sm transition-colors">
+                                Beri Pelukan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rewards Section -->
+                <div class="bg-white rounded-2xl p-8 card-shadow mb-8 fade-in">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-6">🏆 EmoStars Anda</h3>
+
+                    <div class="text-center mb-6">
+                        <div class="text-6xl mb-4">
+                            <span class="star-animation">⭐</span>
+                            <span class="star-animation" style="animation-delay: 0.5s">⭐</span>
+                            <span class="star-animation" style="animation-delay: 1s">⭐</span>
+                        </div>
+                        <p class="text-lg font-bold text-gray-800">Tahniah! Anda telah mengumpul 3 EmoStars!</p>
+                        <p class="text-gray-600">Teruskan aktiviti untuk mendapat lebih banyak bintang</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-4 bg-yellow-50 rounded-lg">
+                            <div class="text-2xl mb-2">🎨</div>
+                            <p class="text-sm font-medium">Pelukis Kreatif</p>
+                        </div>
+                        <div class="text-center p-4 bg-blue-50 rounded-lg">
+                            <div class="text-2xl mb-2">😊</div>
+                            <p class="text-sm font-medium">Senyuman Emas</p>
+                        </div>
+                        <div class="text-center p-4 bg-green-50 rounded-lg">
+                            <div class="text-2xl mb-2">🌟</div>
+                            <p class="text-sm font-medium">Bintang Emosi</p>
+                        </div>
+                        <div class="text-center p-4 bg-purple-50 rounded-lg opacity-50">
+                            <div class="text-2xl mb-2">🏆</div>
+                            <p class="text-sm font-medium">Juara Hati</p>
+                            <p class="text-xs text-gray-500">Kumpul 5 bintang</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="text-center space-y-4">
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <button id="downloadPdfBtn" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all transform hover:scale-105">
+                            📄 Muat Turun Laporan PDF
+                        </button>
+                        <button id="newDrawingBtn" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-4 px-8 rounded-full text-lg transition-all transform hover:scale-105">
+                            🎨 Analisis Lukisan Baru
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Custom Message Box -->
+    <div id="messageBox" class="message-box hidden">
+      <h3 id="messageTitle" class="text-2xl font-bold mb-4"></h3>
+      <p id="messageText" class="text-lg text-gray-700 mb-6"></p>
+      <button id="closeMessageBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-full">Tutup</button>
+    </div>
+
+    <script>
+        let currentStars = 3;
+        let completedActivities = new Set();
+        let selectedEmotionData = null;
+
+        // Function to show custom message box
+        function showMessage(title, text) {
+            const messageBox = document.getElementById('messageBox');
+            const messageTitle = document.getElementById('messageTitle');
+            const messageText = document.getElementById('messageText');
+            
+            messageTitle.textContent = title;
+            messageText.textContent = text;
+            messageBox.classList.remove('hidden');
+        }
+
+        // Close message box button event listener
+        document.getElementById('closeMessageBtn').addEventListener('click', () => {
+            document.getElementById('messageBox').classList.add('hidden');
+        });
+
+        // Function to handle click on emotion emoji
+        function showEmotionDetails(element, emoji, name, description) {
+            // Add animation class
+            const emojiDiv = element.querySelector('div');
+            emojiDiv.classList.add('clicked-animation');
+
+            // Remove animation after it completes
+            setTimeout(() => {
+                emojiDiv.classList.remove('clicked-animation');
+            }, 500);
+
+            // Show message box with emotion details
+            showMessage(name, description);
+        }
+
+        // File upload handling
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#667eea';
+            uploadArea.style.backgroundColor = '#f7fafc';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#cbd5e0';
+            uploadArea.style.backgroundColor = 'transparent';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        let base64Image = '';
+
+        function handleFile(file) {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    imagePreview.classList.remove('hidden');
+                    // Store the base64 data for analysis
+                    base64Image = e.target.result.split(',')[1];
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Analysis with Gemini API
+        analyzeBtn.addEventListener('click', startAnalysis);
+
+        async function startAnalysis() {
+            if (!base64Image) {
+                showMessage('Ralat', 'Sila muat naik gambar lukisan terlebih dahulu.');
+                return;
+            }
+
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('loadingSection').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('loadingText').textContent = 'Menghantar imej untuk analisis...';
+
+            try {
+                // Perform the image analysis with a structured response request
+                const analysisResult = await analyzeImageWithGemini(base64Image);
+                updateUIWithAnalysis(analysisResult);
+            } catch (error) {
+                console.error('Gemini API Error:', error);
+                showMessage('Ralat Analisis', 'Gagal menganalisis lukisan. Sila cuba lagi.');
+                document.getElementById('loadingSection').classList.add('hidden');
+                document.getElementById('uploadSection').style.display = 'block';
+            }
+        }
+        
+        async function analyzeImageWithGemini(base64ImageData) {
+            const apiKey = "AIzaSyAofDeuZuhfxjcKV21x2bG_7m8IDvvgBT0";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            // We use a structured JSON response schema for predictable output
+            const prompt = `Analisis lukisan ini dan berikan penilaian emosi. Balas dalam format JSON sahaja. Lukisan ini adalah dari kanak-kanak, jadi penilaian mestilah ringkas dan sesuai.
+            Nyatakan emoji emosi dominan, nama emosi (dalam Bahasa Malaysia), penerangan ringkas, tahap kegembiraan, ketenangan, dan kreativiti (semua dalam peratusan), serta penemuan utama mengenai warna, bentuk, dan simbol.
+            
+            Format respons JSON:
+            {
+              "emotion_emoji": "emoji",
+              "emotion_name": "nama emosi",
+              "emotion_description": "penerangan ringkas",
+              "happiness_level": "nombor (0-100)",
+              "calmness_level": "nombor (0-100)",
+              "creativity_level": "nombor (0-100)",
+              "dominant_colors": "penerangan ringkas mengenai warna",
+              "dominant_shapes": "penerangan ringkas mengenai bentuk",
+              "dominant_symbols": "penerangan ringkas mengenai simbol"
+            }
+            `;
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: prompt },
+                        {
+                            inlineData: {
+                                mimeType: "image/png",
+                                data: base64ImageData
+                            }
+                        }
+                    ]
+                }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "emotion_emoji": { "type": "STRING" },
+                            "emotion_name": { "type": "STRING" },
+                            "emotion_description": { "type": "STRING" },
+                            "happiness_level": { "type": "NUMBER" },
+                            "calmness_level": { "type": "NUMBER" },
+                            "creativity_level": { "type": "NUMBER" },
+                            "dominant_colors": { "type": "STRING" },
+                            "dominant_shapes": { "type": "STRING" },
+                            "dominant_symbols": { "type": "STRING" }
+                        }
+                    }
+                }
+            };
+            
+            // Function for exponential backoff retry logic
+            const maxRetries = 3;
+            let retries = 0;
+            while (retries < maxRetries) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (!text) {
+                        throw new Error("Invalid response format from Gemini API");
+                    }
+
+                    return JSON.parse(text);
+
+                } catch (error) {
+                    console.error(`Attempt ${retries + 1} failed:`, error);
+                    retries++;
+                    if (retries < maxRetries) {
+                        await new Promise(res => setTimeout(res, Math.pow(2, retries) * 1000));
+                    } else {
+                        throw error;
+                    }
+                }
+            }
+        }
+
+
+        function updateUIWithAnalysis(data) {
+            // Update the UI with the analysis data from Gemini
+            document.getElementById('emotionEmoji').textContent = data.emotion_emoji;
+            document.getElementById('emotionName').textContent = data.emotion_name;
+            document.getElementById('emotionDescription').textContent = data.emotion_description;
+            document.getElementById('happinessBar').style.width = data.happiness_level + '%';
+            document.getElementById('calmBar').style.width = data.calmness_level + '%';
+            document.getElementById('creativityBar').style.width = data.creativity_level + '%';
+            document.getElementById('happinessPercentage').textContent = data.happiness_level + '%';
+            document.getElementById('calmPercentage').textContent = data.calmness_level + '%';
+            document.getElementById('creativityPercentage').textContent = data.creativity_level + '%';
+            document.getElementById('dominantColors').textContent = data.dominant_colors;
+            document.getElementById('dominantShapes').textContent = data.dominant_shapes;
+            document.getElementById('dominantSymbols').textContent = data.dominant_symbols;
+
+            // Hide loading, show results
+            document.getElementById('loadingSection').classList.add('hidden');
+            document.getElementById('resultsSection').classList.remove('hidden');
+        }
+
+        function completeActivity(element, activityType) {
+            if (completedActivities.has(activityType)) return;
+
+            completedActivities.add(activityType);
+            element.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            element.style.color = 'white';
+
+            const button = element.querySelector('button');
+            button.textContent = '✅ Selesai!';
+            button.style.background = 'rgba(255,255,255,0.2)';
+
+            // Add star animation
+            currentStars++;
+            setTimeout(() => {
+                showMessage('🌟 Tahniah!', `Anda mendapat 1 EmoStar baru! Total: ${currentStars} bintang`);
+            }, 500);
+        }
+
+        // PDF Generation
+        document.getElementById('downloadPdfBtn').addEventListener('click', generatePDF);
+
+        function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Get current analysis data
+            const emotionName = document.getElementById('emotionName').textContent;
+            const emotionDesc = document.getElementById('emotionDescription').textContent;
+            const happinessLevel = document.getElementById('happinessPercentage').textContent;
+            const calmLevel = document.getElementById('calmPercentage').textContent;
+            const creativityLevel = document.getElementById('creativityPercentage').textContent;
+            const dominantColors = document.getElementById('dominantColors').textContent;
+            const dominantShapes = document.getElementById('dominantShapes').textContent;
+            const dominantSymbols = document.getElementById('dominantSymbols').textContent;
+
+            // Header
+            doc.setFontSize(24);
+            doc.setTextColor(102, 126, 234);
+            doc.text('EmoSketch - Laporan Analisis Emosi', 20, 30);
+
+            // Date
+            doc.setFontSize(12);
+            doc.setTextColor(100, 100, 100);
+            const today = new Date().toLocaleDateString('ms-MY');
+            doc.text(`Tarikh: ${today}`, 20, 45);
+
+            // Student info section
+            doc.setFontSize(16);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Maklumat Murid:', 20, 65);
+            doc.setFontSize(12);
+            doc.text('Nama: _____', 20, 80);
+            doc.text('Kelas: _____', 20, 95);
+            doc.text('Umur: ______', 20, 110);
+
+            // Emotion Analysis Section
+            doc.setFontSize(16);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Analisis Emosi Utama:', 20, 135);
+
+            doc.setFontSize(14);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Emosi Dominan: ${emotionName}`, 20, 150);
+
+            doc.setFontSize(12);
+            const wrappedDesc = doc.splitTextToSize(emotionDesc, 170);
+            doc.text(wrappedDesc, 20, 165);
+
+            // Emotion Levels
+            doc.setFontSize(14);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Tahap Emosi:', 20, 190);
+
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`• Kegembiraan: ${happinessLevel}`, 25, 205);
+            doc.text(`• Ketenangan: ${calmLevel}`, 25, 220);
+            doc.text(`• Kreativiti: ${creativityLevel}`, 25, 235);
+
+            // AI Insights
+            doc.setFontSize(14);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Penemuan AI:', 20, 260);
+
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`• Warna Dominan: ${dominantColors}`, 25, 275);
+            doc.text(`• Bentuk: ${dominantShapes}`, 25, 290);
+
+            // New page for activities
+            doc.addPage();
+
+            // Activities Section
+            doc.setFontSize(16);
+            doc.setTextColor(102, 126, 234);
+            doc.text('Cadangan Aktiviti Pengurusan Emosi:', 20, 30);
+
+            const activities = [
+                {
+                    title: '1. Latihan Pernafasan',
+                    desc: 'Tarik nafas dalam 3 kali untuk menenangkan diri. Lakukan setiap pagi dan petang.',
+                    status: completedActivities.has('breathing') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '2. Senyuman Ajaib',
+                    desc: 'Senyum di hadapan cermin selama 30 saat. Ini membantu meningkatkan mood.',
+                    status: completedActivities.has('smile') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '3. Senaman Regangan',
+                    desc: 'Regangkan badan untuk rasa lebih segar. Baik untuk kesihatan fizikal dan mental.',
+                    status: completedActivities.has('stretch') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '4. Lukis Lagi',
+                    desc: 'Lukis dengan warna cerah untuk kekal positif. Seni adalah terapi yang baik.',
+                    status: completedActivities.has('draw') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '5. Tulis Perasaan',
+                    desc: 'Tulis 3 perkara yang buat anda gembira hari ini. Journaling membantu memproses emosi.',
+                    status: completedActivities.has('journal') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '6. Muzik Menenangkan',
+                    desc: 'Dengar lagu kegemaran selama 5 minit. Muzik boleh mengubah mood dengan cepat.',
+                    status: completedActivities.has('music') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '7. Masa dengan Alam',
+                    desc: 'Lihat pokok atau bunga selama 2 minit. Alam semula jadi menenangkan minda.',
+                    status: completedActivities.has('nature') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '8. Bersyukur',
+                    desc: 'Sebut 3 perkara yang anda syukuri. Rasa syukur meningkatkan kebahagiaan.',
+                    status: completedActivities.has('gratitude') ? '✓ Selesai' : '○ Belum'
+                },
+                {
+                    title: '9. Pelukan Hangat',
+                    desc: 'Peluk orang tersayang atau boneka kesayangan. Pelukan melepaskan hormon bahagia.',
+                    status: completedActivities.has('hug') ? '✓ Selesai' : '○ Belum'
+                }
+            ];
+
+            let yPos = 50;
+            activities.forEach(activity => {
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(activity.title, 20, yPos);
+                doc.text(activity.status, 150, yPos);
+
+                const wrappedActivity = doc.splitTextToSize(activity.desc, 170);
+                doc.setFontSize(10);
+                doc.setTextColor(100, 100, 100);
+                doc.text(wrappedActivity, 25, yPos + 10);
+
+                yPos += 35;
+            });
+
+            // Rewards Section
+            doc.setFontSize(16);
+            doc.setTextColor(102, 126, 234);
+            doc.text('EmoStars dan Pencapaian:', 20, yPos + 20);
+
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`Jumlah EmoStars: ${currentStars} bintang`, 20, yPos + 40);
+
+            const badges = ['Pelukis Kreatif', 'Senyuman Emas', 'Bintang Emosi'];
+            doc.text('Lencana yang diperoleh:', 20, yPos + 55);
+            badges.forEach((badge, index) => {
+                doc.text(`• ${badge}`, 25, yPos + 70 + (index * 15));
+            });
+
+            // Footer
+            doc.setFontSize(10);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Laporan ini dijana secara automatik oleh EmoSketch AI', 20, 280);
+            doc.text('Untuk maklumat lanjut, sila berbincang dengan guru atau ibu bapa.', 20, 290);
+
+            // Save the PDF
+            const fileName = `EmoSketch_Laporan_${today.replace(/\//g, '-')}.pdf`;
+            doc.save(fileName);
+
+            // Show success message
+            setTimeout(() => {
+                showMessage('📄 Muat Turun Selesai!', 'Laporan PDF berjaya dimuat turun! Anda boleh berkongsi dengan guru atau ibu bapa.');
+            }, 500);
+        }
+
+        // New drawing button
+        document.getElementById('newDrawingBtn').addEventListener('click', () => {
+            document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('imagePreview').classList.add('hidden');
+            fileInput.value = '';
+            completedActivities.clear();
+        });
+    </script>
+</body>
+</html>
